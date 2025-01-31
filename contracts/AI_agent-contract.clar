@@ -111,3 +111,28 @@
         )
     )
 )
+
+;; Admin functions
+(define-public (authorize-agent (agent principal))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (map-set authorized-agents agent true)
+        (ok true)
+    )
+)
+
+(define-public (revoke-agent (agent principal))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (map-set authorized-agents agent false)
+        (ok true)
+    )
+)
+
+(define-public (set-agent-token (new-token principal))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (var-set agent-token-address new-token)
+        (ok true)
+    )
+)
