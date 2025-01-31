@@ -47,3 +47,92 @@
 (define-read-only (is-agent-authorized (agent principal))
     (default-to false (map-get? authorized-agents agent))
 )
+
+;; Public functions
+(define-public (submit-ai-request (prompt (string-utf8 500)))
+    (let (
+        (request-id (+ (var-get request-counter) u1))
+    )
+        ;; Store request
+        (map-set ai-requests
+            {request-id: request-id}
+            {
+                owner: tx-sender,
+                prompt: prompt,
+                result: none,
+                timestamp: block-height,
+                status: "pending"
+            }
+        )
+        
+        ;; Update counter
+        (var-set request-counter request-id)
+        (ok request-id)
+    )
+)
+
+(define-public (process-ai-response 
+    (request-id uint)
+    (response (string-utf8 1000))
+    (confidence uint)
+    (model-version (string-ascii 50)))
+    (let (
+        (request (unwrap! (map-get? ai-requests {request-id: request-id}) ERR-INVALID-REQUEST))
+    )
+        ;; Check authorization
+        (asserts! (is-agent-authorized tx-sender) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (get status request) "pending") ERR-ALREADY-PROCESSED)
+        
+        ;; Calculate verification hash
+        (let (
+            (verification-hash (hash response))
+        )
+            ;; Store response
+            (map-set ai-responses
+                {request-id: request-id}
+                {
+                    response: response,
+                    confidence: confidence,
+                    model-version: model-version,
+                    verification-hash: verification-hash
+                }
+            )
+            
+            ;; Update request status
+            (map-set ai-requests
+                {request-id: request-id}
+                (merge request {
+                    result: (some response),
+                    status: "completed"
+                })
+            )
+            
+            (ok verification-hash)
+        )
+    )
+)
+
+;; Admin functions
+(define-public (authorize-agent (agent principal))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (map-set authorized-agents agent true)
+        (ok true)
+    )
+)
+
+(define-public (revoke-agent (agent principal))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (map-set authorized-agents agent false)
+        (ok true)
+    )
+)
+
+(define-public (set-agent-token (new-token principal))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+        (var-set agent-token-address new-token)
+        (ok true)
+    )
+)
