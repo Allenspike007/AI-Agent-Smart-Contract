@@ -1,15 +1,10 @@
+;; AI Agent Smart Contract
+;; Handles AI interactions and stores results on-chain
 
-;; AI_agent-contract
-;; <add a description here>
+(use-trait ft-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
 
-;; constants
-;;
-
-;; data maps and vars
-;;
-
-;; private functions
-;;
-
-;; public functions
-;;
+;; Constants
+(define-constant CONTRACT-OWNER tx-sender)
+(define-constant ERR-NOT-AUTHORIZED (err u101))
+(define-constant ERR-INVALID-REQUEST (err u102))
+(define-constant ERR-ALREADY-PROCESSED (err u103))
