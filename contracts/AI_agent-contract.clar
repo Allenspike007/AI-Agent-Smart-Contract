@@ -70,3 +70,44 @@
         (ok request-id)
     )
 )
+
+(define-public (process-ai-response 
+    (request-id uint)
+    (response (string-utf8 1000))
+    (confidence uint)
+    (model-version (string-ascii 50)))
+    (let (
+        (request (unwrap! (map-get? ai-requests {request-id: request-id}) ERR-INVALID-REQUEST))
+    )
+        ;; Check authorization
+        (asserts! (is-agent-authorized tx-sender) ERR-NOT-AUTHORIZED)
+        (asserts! (is-eq (get status request) "pending") ERR-ALREADY-PROCESSED)
+        
+        ;; Calculate verification hash
+        (let (
+            (verification-hash (hash response))
+        )
+            ;; Store response
+            (map-set ai-responses
+                {request-id: request-id}
+                {
+                    response: response,
+                    confidence: confidence,
+                    model-version: model-version,
+                    verification-hash: verification-hash
+                }
+            )
+            
+            ;; Update request status
+            (map-set ai-requests
+                {request-id: request-id}
+                (merge request {
+                    result: (some response),
+                    status: "completed"
+                })
+            )
+            
+            (ok verification-hash)
+        )
+    )
+)
