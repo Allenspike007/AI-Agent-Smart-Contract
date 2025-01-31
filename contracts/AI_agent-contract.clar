@@ -47,3 +47,26 @@
 (define-read-only (is-agent-authorized (agent principal))
     (default-to false (map-get? authorized-agents agent))
 )
+
+;; Public functions
+(define-public (submit-ai-request (prompt (string-utf8 500)))
+    (let (
+        (request-id (+ (var-get request-counter) u1))
+    )
+        ;; Store request
+        (map-set ai-requests
+            {request-id: request-id}
+            {
+                owner: tx-sender,
+                prompt: prompt,
+                result: none,
+                timestamp: block-height,
+                status: "pending"
+            }
+        )
+        
+        ;; Update counter
+        (var-set request-counter request-id)
+        (ok request-id)
+    )
+)
