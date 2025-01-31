@@ -30,3 +30,20 @@
         verification-hash: (buff 32)
     }
 )
+
+(define-map authorized-agents principal bool)
+(define-data-var request-counter uint u0)
+(define-data-var agent-token-address principal 'SP000000000000000000002Q6VF78.token)
+
+;; Read-only functions
+(define-read-only (get-request (request-id uint))
+    (map-get? ai-requests {request-id: request-id})
+)
+
+(define-read-only (get-response (request-id uint))
+    (map-get? ai-responses {request-id: request-id})
+)
+
+(define-read-only (is-agent-authorized (agent principal))
+    (default-to false (map-get? authorized-agents agent))
+)
